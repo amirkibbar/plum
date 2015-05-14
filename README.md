@@ -28,7 +28,7 @@ application to:
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.0.2"
+        compile "ajk.plum:plum:0.0.3"
     }
 ```
 
