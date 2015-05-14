@@ -22,6 +22,9 @@ import static org.apache.commons.logging.LogFactory.getLog;
 import static org.xbill.DNS.Type.A;
 import static org.xbill.DNS.Type.SRV;
 
+/**
+ * a convenient way to resolve SRV records in a DNS
+ */
 @Component
 public class DnsResolver {
     private Log log = getLog(getClass());
@@ -52,6 +55,11 @@ public class DnsResolver {
         }
     }
 
+    /**
+     * read the local real IP address (not the loopback address)
+     *
+     * @return the real IP address, or the loopback address when no real one could be found
+     */
     public String readNonLoopbackLocalAddress() {
         if (nonLoopback == null) {
             try {

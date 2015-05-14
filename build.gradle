@@ -1,3 +1,7 @@
+plugins {
+    id "com.jfrog.bintray" version "1.1"
+}
+
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
@@ -16,7 +20,7 @@ dependencies {
 }
 
 def buildNum = System.getProperty("BUILD_NUMBER", "0")
-def plumVer = "0.0.3"
+def plumVer = "0.0.4"
 
 jar {
     baseName = 'plum'
@@ -25,24 +29,6 @@ jar {
         attributes("Implementation-Title": "consul4spring (plum)",
                 "Implementation-version": "${plumVer}-b$buildNum")
     }
-}
-
-task pomXml << {
-    pom {
-        project {
-            groupId "ajk.plum"
-            inceptionYear '2015'
-            version plumVer
-            url "https://github.com/amirkibbar/plum"
-
-            licenses {
-                license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                }
-            }
-        }
-    }.writeTo("$buildDir/libs/plum-${plumVer}.pom")
 }
 
 publishing {
@@ -105,3 +91,27 @@ artifacts {
     archives sourcesJar
     archives javadocJar
 }
+
+bintray {
+    user = System.getenv("BINTRAY_USER")
+    key = System.getenv("BINTRAY_KEY")
+
+    publications = ['maven']
+
+    publish = true
+
+    pkg {
+        repo = 'maven'
+        name = 'consul4spring'
+        websiteUrl = 'https://github.com/amirkibbar/plum'
+        issueTrackerUrl = 'https://github.com/amirkibbar/plum/issues'
+        vcsUrl = 'https://github.com/amirkibbar/plum.git'
+        licenses = ['Apache-2.0']
+        labels = ['spring-boot', 'consul']
+        version {
+            name = plumVer
+        }
+    }
+}
+
+bintrayUpload.dependsOn = [sourcesJar, javadocJar]

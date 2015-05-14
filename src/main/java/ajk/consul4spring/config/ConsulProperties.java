@@ -2,6 +2,10 @@ package ajk.consul4spring.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * the consul properties is loaded from your application.yml (or any other means supported by the {@code @ConfigurationProperties}
+ * spring boot annotation)
+ */
 @SuppressWarnings("unused")
 @ConfigurationProperties(prefix = "consul")
 public class ConsulProperties {
@@ -29,10 +33,20 @@ public class ConsulProperties {
         return tags;
     }
 
+    /**
+     * the tags used to publish your service
+     *
+     * @param tags an array of Consul tags
+     */
     public void setTags(String[] tags) {
         this.tags = tags;
     }
 
+    /**
+     * the name used to register your service in Consul. This should be a DNS resolvable name
+     *
+     * @param serviceName the service name, for example MyService
+     */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
@@ -41,6 +55,11 @@ public class ConsulProperties {
         return serviceId;
     }
 
+    /**
+     * the service ID used to register your service in Consul. This ID could be the service name, for example
+     *
+     * @param serviceId the ID with which the service is registered in Consul
+     */
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
     }
@@ -49,6 +68,11 @@ public class ConsulProperties {
         return hostname;
     }
 
+    /**
+     * the Consul hostname
+     *
+     * @param hostname the Consul hostname or IP address
+     */
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
@@ -57,6 +81,11 @@ public class ConsulProperties {
         return httpPort;
     }
 
+    /**
+     * the HTTP port to access the Consul HTTP API
+     *
+     * @param httpPort Consul HTTP port
+     */
     public void setHttpPort(int httpPort) {
         this.httpPort = httpPort;
     }
@@ -65,6 +94,11 @@ public class ConsulProperties {
         return dnsPort;
     }
 
+    /**
+     * the DNS port to access the Consul DNS API
+     *
+     * @param dnsPort Consul DNS port
+     */
     public void setDnsPort(int dnsPort) {
         this.dnsPort = dnsPort;
     }
