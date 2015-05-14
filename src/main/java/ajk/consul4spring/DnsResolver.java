@@ -1,0 +1,97 @@
+package ajk.consul4spring;
+
+import org.apache.commons.logging.Log;
+import org.springframework.stereotype.Component;
+import org.xbill.DNS.ARecord;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Name;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
+import org.xbill.DNS.TextParseException;
+
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Enumeration;
+
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Stream.of;
+import static org.apache.commons.logging.LogFactory.getLog;
+import static org.xbill.DNS.Type.A;
+import static org.xbill.DNS.Type.SRV;
+
+@Component
+public class DnsResolver {
+    private Log log = getLog(getClass());
+    private String nonLoopback;
+
+    /**
+     * resolves an SRV record by its name
+     *
+     * @param name the DNS name of the SRV record
+     * @return a comma separate list of ip:port, e.g: 1.2.3.4:8080,2.3.4.5:9090 or null when unable to resolve
+     */
+    public String resolveServiceByName(String name) {
+        try {
+            Lookup lookup = new Lookup(name, SRV);
+            Record[] records = lookup.run();
+            if (records == null) {
+                return null;
+            }
+
+            return of(records)
+                    .filter(it -> it instanceof SRVRecord)
+                    .map(srv -> resolveHostByName(((SRVRecord) srv).getTarget()) + ":" + ((SRVRecord) srv).getPort())
+                    .distinct()
+                    .collect(joining(","));
+        } catch (TextParseException e) {
+            log.warn("unable to resolve using SRV record " + name, e);
+            return null;
+        }
+    }
+
+    public String readNonLoopbackLocalAddress() {
+        if (nonLoopback == null) {
+            try {
+                Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+                while (nics.hasMoreElements()) {
+                    NetworkInterface nic = nics.nextElement();
+                    Enumeration<InetAddress> addresses = nic.getInetAddresses();
+
+                    while (addresses.hasMoreElements()) {
+                        InetAddress addr = addresses.nextElement();
+                        if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                            nonLoopback = addr.getHostAddress();
+                            break;
+                        }
+                    }
+                }
+
+                if (nonLoopback == null) {
+                    nonLoopback = InetAddress.getLocalHost().getHostAddress();
+                }
+            } catch (SocketException | UnknownHostException e) {
+                log.info("unable to obtain a non loopback local address", e);
+            }
+        }
+
+        return nonLoopback;
+    }
+
+    private String resolveHostByName(Name target) {
+        Lookup lookup = new Lookup(target, A);
+        Record[] records = lookup.run();
+        java.util.Optional<InetAddress> address = of(records)
+                .filter(it -> it instanceof ARecord)
+                .map(a -> ((ARecord) a).getAddress())
+                .findFirst();
+        if (address.isPresent()) {
+            return address.get().getHostAddress();
+        } else {
+            log.warn("unknown name: " + target);
+            return null;
+        }
+    }
+}

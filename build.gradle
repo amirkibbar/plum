@@ -1,0 +1,26 @@
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+    maven { url "http://repo.spring.io/milestone" }
+    maven { url "https://bintray.com/artifact/download/orbitz/consul-client" }
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot:1.2.3.RELEASE")
+    compile("org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE")
+    compile("com.orbitz.consul:consul-client:0.8.3")
+    compile("dnsjava:dnsjava:2.1.7")
+    compile("commons-io:commons-io:2.4")
+}
+
+def buildNum = System.getProperty("BUILD_NUMBER", "0")
+
+jar {
+    baseName = 'plum'
+    version = "0.0.1"
+    manifest {
+        attributes("Implementation-Title": "consul4spring (plum)",
+                "Implementation-version": "0.0.1-b$buildNum")
+    }
+}
