@@ -1,7 +1,10 @@
 # consul4spring
 A spring-boot extension aimed at using Consul as a micro service registration
 
+[ ![Download](https://api.bintray.com/packages/amirk/maven/consul4spring/images/download.svg) ](https://bintray.com/amirk/maven/consul4spring/_latestVersion)
+
 # Overview
+
 This library is some glue-code that I needed to write my first micro service. I wanted my micro service to use 
 spring-boot and to register itself in a [Consul](https://consul.io/) cluster. This library allows a spring-boot 
 application to:
@@ -12,6 +15,11 @@ application to:
 - Use the Consul distributed lock
 - Easily store values in the Consul key value store
 - Resolve a DNS SRV record
+
+# Acknowledgement
+
+This library uses [Orbitz Consul Client](https://github.com/OrbitzWorldwide/consul-client) to communicate with Consul
+and [dnsjava](http://www.dnsjava.org/) for DNS resolution.
 
 # Using the library features
 
@@ -28,7 +36,7 @@ application to:
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.0.3"
+        compile "ajk.plum:plum:0.0.4"
     }
 ```
 
