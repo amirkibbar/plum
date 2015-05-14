@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 repositories {
     jcenter()
@@ -16,7 +16,7 @@ dependencies {
 }
 
 def buildNum = System.getProperty("BUILD_NUMBER", "0")
-def plumVer = "0.0.2"
+def plumVer = "0.0.3"
 
 jar {
     baseName = 'plum'
@@ -27,7 +27,7 @@ jar {
     }
 }
 
-task writePom << {
+task pomXml << {
     pom {
         project {
             groupId "ajk.plum"
@@ -43,4 +43,65 @@ task writePom << {
             }
         }
     }.writeTo("$buildDir/libs/plum-${plumVer}.pom")
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'ajk.plum'
+            artifactId 'plum'
+            version plumVer
+
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name 'plum'
+                    inceptionYear "2015"
+                    url "https://github.com/amirkibbar/plum"
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
+                    }
+                }
+            }
+
+            from components.java
+
+            artifact sourcesJar {
+                classifier "sources"
+            }
+
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+        }
+    }
+}
+
+model {
+    tasks.generatePomFileForMavenPublication {
+        destination = file("$buildDir/libs/plum-${plumVer}.pom")
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    version = plumVer
+
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    version = plumVer
+
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
 }

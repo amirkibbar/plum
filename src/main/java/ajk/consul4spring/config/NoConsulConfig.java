@@ -1,9 +1,9 @@
 package ajk.consul4spring.config;
 
 import ajk.consul4spring.CheckService;
+import ajk.consul4spring.Consul4Spring;
 import ajk.consul4spring.ConsulTemplate;
 import ajk.consul4spring.DistributedLock;
-import ajk.consul4spring.impl.ConsulService;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,7 +21,7 @@ import static java.nio.file.Files.notExists;
 import static java.nio.file.Paths.get;
 import static org.apache.commons.logging.LogFactory.getLog;
 
-@ConditionalOnMissingBean(value = ConsulService.class)
+@ConditionalOnMissingBean(value = Consul4Spring.class)
 @Configuration
 public class NoConsulConfig {
     @Bean

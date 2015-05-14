@@ -1,11 +1,6 @@
-package ajk.consul4spring.impl;
+package ajk.consul4spring;
 
-import ajk.consul4spring.CheckService;
 import ajk.consul4spring.config.ConsulProperties;
-import ajk.consul4spring.ConsulTemplate;
-import ajk.consul4spring.DefaultProperties;
-import ajk.consul4spring.DistributedLock;
-import ajk.consul4spring.DnsResolver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
@@ -40,7 +35,7 @@ import static org.apache.commons.logging.LogFactory.getLog;
 
 @Service
 @Profile("consul")
-public class ConsulService implements CheckService, DistributedLock, ConsulTemplate {
+public class Consul4Spring implements CheckService, DistributedLock, ConsulTemplate {
     private Log log = getLog(getClass());
 
     @Autowired
@@ -71,7 +66,7 @@ public class ConsulService implements CheckService, DistributedLock, ConsulTempl
     private void writeDefaultProperties() {
         Object defaultProperties = getDefaultProperties();
 
-        if(defaultProperties == null) {
+        if (defaultProperties == null) {
             log.info("can't find the @DefaultProperties object, skipping configuration registration");
             return;
         }
@@ -96,7 +91,7 @@ public class ConsulService implements CheckService, DistributedLock, ConsulTempl
     private Object getDefaultProperties() {
         Map<String, Object> defaultPropertiesMap = ctx.getBeansWithAnnotation(DefaultProperties.class);
 
-        if (defaultPropertiesMap.size() ==0) {
+        if (defaultPropertiesMap.size() == 0) {
             return null;
         }
 
