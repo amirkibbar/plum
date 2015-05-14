@@ -16,22 +16,23 @@ dependencies {
 }
 
 def buildNum = System.getProperty("BUILD_NUMBER", "0")
+def plumVer = "0.0.2"
 
 jar {
     baseName = 'plum'
-    version = "0.0.1"
+    version = plumVer
     manifest {
         attributes("Implementation-Title": "consul4spring (plum)",
-                "Implementation-version": "0.0.1-b$buildNum")
+                "Implementation-version": "${plumVer}-b$buildNum")
     }
 }
 
-task writeNewPom << {
+task writePom << {
     pom {
         project {
             groupId "ajk.plum"
             inceptionYear '2015'
-            version "0.0.1"
+            version plumVer
             url "https://github.com/amirkibbar/plum"
 
             licenses {
@@ -41,5 +42,5 @@ task writeNewPom << {
                 }
             }
         }
-    }.writeTo("$buildDir/libs/plum-0.0.1.pom")
+    }.writeTo("$buildDir/libs/plum-${plumVer}.pom")
 }
