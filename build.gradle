@@ -19,7 +19,6 @@ dependencies {
     compile("commons-io:commons-io:2.4")
 }
 
-def buildNum = System.getProperty("BUILD_NUMBER", "0")
 def plumVer = "0.0.4"
 
 jar {
@@ -27,7 +26,7 @@ jar {
     version = plumVer
     manifest {
         attributes("Implementation-Title": "consul4spring (plum)",
-                "Implementation-version": "${plumVer}-b$buildNum")
+                "Implementation-version": plumVer)
     }
 }
 
