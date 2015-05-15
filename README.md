@@ -69,7 +69,7 @@ Load the ConsulProperties from the application.yml with spring-boot's @EnableCon
     @EnableConfigurationProperties(ConsulProperties.class)
 ```
 
-### Define the "default properties"
+### Define the "default properties" (optional)
 
 This library allows you to setup a "default properties" object. This object will be registered in the Consul key value
 store when your application starts. This object can be anything, as long as it's possible to serialize and deserialize
@@ -148,7 +148,7 @@ Consul provides a convenient distributed lock mechanism. This library exposes th
     }
 ```
 
-## Easily store and retrive values from the Consul key value store
+## Easily store and retrieve values from the Consul key value store
 
 Use the ConsulTemplate to retrieve and store values in the Consul key value store:
 
