@@ -19,7 +19,7 @@ dependencies {
     compile("commons-io:commons-io:2.4")
 }
 
-def plumVer = "0.0.4"
+def plumVer = "0.0.5"
 
 jar {
     baseName = 'plum'
@@ -70,6 +70,10 @@ model {
     tasks.generatePomFileForMavenPublication {
         destination = file("$buildDir/libs/plum-${plumVer}.pom")
     }
+}
+
+task install(dependsOn: 'publishMavenPublicationToMavenLocal') << {
+    logger.info "installing $project.name"
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

@@ -15,6 +15,7 @@ import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.context.embedded.EmbeddedWebApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,6 +41,12 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
 
     @Autowired
     private ConsulProperties consulProperties;
+
+    // the following is here to make sure the server port has been set before we try to read it, otherwise the server
+    // port will not yet be defined
+    @SuppressWarnings("unused")
+    @Autowired
+    private EmbeddedWebApplicationContext server;
 
     @Autowired
     private ServerProperties serverProperties;

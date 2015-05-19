@@ -6,7 +6,9 @@ import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.Resolver;
 import org.xbill.DNS.SRVRecord;
+import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.TextParseException;
 
 import java.net.Inet4Address;
@@ -31,14 +33,42 @@ public class DnsResolver {
     private String nonLoopback;
 
     /**
-     * resolves an SRV record by its name
+     * resolves an SRV record by its name and the default resolution defined at the host level
      *
      * @param name the DNS name of the SRV record
      * @return a comma separate list of ip:port, e.g: 1.2.3.4:8080,2.3.4.5:9090 or null when unable to resolve
      */
     public String resolveServiceByName(String name) {
+        return resolveSrvByName(null, name);
+
+    }
+
+    /**
+     * resolves an SRV record by its name using a specified DNS host and port
+     *
+     * @param resolverHost name server hostname or IP address
+     * @param resolverPort name server port
+     * @param name         the DNS name of the SRV record
+     * @return a comma separate list of ip:port, e.g: 1.2.3.4:8080,2.3.4.5:9090 or null when unable to resolve
+     */
+    public String resolveServiceByName(String resolverHost, int resolverPort, String name) {
+        try {
+            SimpleResolver resolver = new SimpleResolver(resolverHost);
+            resolver.setPort(resolverPort);
+
+            return resolveSrvByName(resolver, name);
+        } catch (UnknownHostException e) {
+            log.warn("unable to resolve using SRV record " + name, e);
+            return null;
+        }
+    }
+
+    private String resolveSrvByName(Resolver resolver, String name) {
         try {
             Lookup lookup = new Lookup(name, SRV);
+            if (resolver != null) {
+                lookup.setResolver(resolver);
+            }
             Record[] records = lookup.run();
             if (records == null) {
                 return null;
@@ -46,7 +76,7 @@ public class DnsResolver {
 
             return of(records)
                     .filter(it -> it instanceof SRVRecord)
-                    .map(srv -> resolveHostByName(((SRVRecord) srv).getTarget()) + ":" + ((SRVRecord) srv).getPort())
+                    .map(srv -> resolveHostByName(resolver, ((SRVRecord) srv).getTarget()) + ":" + ((SRVRecord) srv).getPort())
                     .distinct()
                     .collect(joining(","));
         } catch (TextParseException e) {
@@ -88,8 +118,11 @@ public class DnsResolver {
         return nonLoopback;
     }
 
-    private String resolveHostByName(Name target) {
+    private String resolveHostByName(Resolver resolver, Name target) {
         Lookup lookup = new Lookup(target, A);
+        if (resolver != null) {
+            lookup.setResolver(resolver);
+        }
         Record[] records = lookup.run();
         java.util.Optional<InetAddress> address = of(records)
                 .filter(it -> it instanceof ARecord)
