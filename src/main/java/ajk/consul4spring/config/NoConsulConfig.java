@@ -1,11 +1,15 @@
 package ajk.consul4spring.config;
 
+import ajk.consul4spring.CatalogResolver;
 import ajk.consul4spring.CheckService;
 import ajk.consul4spring.Consul4Spring;
 import ajk.consul4spring.ConsulTemplate;
 import ajk.consul4spring.DistributedLock;
+import ajk.consul4spring.DnsResolver;
+import com.orbitz.consul.model.catalog.CatalogService;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,12 +17,14 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.nio.file.Files.createFile;
 import static java.nio.file.Files.deleteIfExists;
 import static java.nio.file.Files.notExists;
 import static java.nio.file.Paths.get;
+import static java.util.Collections.emptySet;
 import static org.apache.commons.logging.LogFactory.getLog;
 
 @ConditionalOnMissingBean(value = Consul4Spring.class)
@@ -37,6 +43,26 @@ public class NoConsulConfig {
     @Bean
     public ConsulTemplate noConsulTemplate() {
         return new NoConsulTemplate();
+    }
+
+    @Bean
+    public CatalogResolver noConsulCatalog() {
+        return new NoConsulCatalog();
+    }
+
+    private static class NoConsulCatalog implements CatalogResolver {
+        @Autowired
+        private DnsResolver dnsResolver;
+
+        @Override
+        public Set<CatalogService> resolveByName(String name) {
+            return emptySet();
+        }
+
+        @Override
+        public String resolveByNameAsClusterDefinition(String name) {
+            return dnsResolver.resolveServiceByName(name);
+        }
     }
 
     private static class NoConsulTemplate implements ConsulTemplate {

@@ -5,12 +5,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.orbitz.consul.AgentClient;
+import com.orbitz.consul.CatalogClient;
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.SessionClient;
 import com.orbitz.consul.model.State;
 import com.orbitz.consul.model.agent.Registration;
+import com.orbitz.consul.model.catalog.CatalogService;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -26,17 +28,21 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.orbitz.consul.Consul.newClient;
 import static com.orbitz.consul.model.State.FAIL;
 import static com.orbitz.consul.model.State.PASS;
 import static com.orbitz.consul.option.QueryOptionsBuilder.builder;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
 
 @Service
 @Profile("consul")
-public class Consul4Spring implements CheckService, DistributedLock, ConsulTemplate {
+public class Consul4Spring implements CheckService, DistributedLock, ConsulTemplate, CatalogResolver {
     private Log log = getLog(getClass());
 
     @Autowired
@@ -256,5 +262,22 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         kvClient.releaseLock(consulProperties.getBaseKey() + "/lock", lockId);
         SessionClient sessionClient = consul.sessionClient();
         sessionClient.destroySession(lockId);
+    }
+
+    @Override
+    public Set<CatalogService> resolveByName(String name) {
+        CatalogClient catalogClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).catalogClient();
+
+        List<CatalogService> catalogServices = catalogClient.getService(name).getResponse();
+        Set<CatalogService> result = new TreeSet<>((o1, o2) -> o1.getServiceName().compareToIgnoreCase(o2.getServiceName()));
+        result.addAll(catalogServices);
+
+        return result;
+    }
+
+    @Override
+    public String resolveByNameAsClusterDefinition(String name) {
+        Set<CatalogService> services = resolveByName(name);
+        return services.stream().map(cs -> cs.getAddress() + ":" + cs.getServicePort()).collect(joining(","));
     }
 }

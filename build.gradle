@@ -12,21 +12,24 @@ repositories {
 }
 
 dependencies {
-    compile("org.springframework.boot:spring-boot:1.2.3.RELEASE")
-    compile("org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE")
-    compile("com.orbitz.consul:consul-client:0.8.3")
-    compile("dnsjava:dnsjava:2.1.7")
-    compile("commons-io:commons-io:2.4")
+    compile "org.springframework.boot:spring-boot:1.2.3.RELEASE"
+    compile "org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE"
+    compile "com.orbitz.consul:consul-client:0.9.1"
+    compile "dnsjava:dnsjava:2.1.7"
+    compile "commons-io:commons-io:2.4"
+
+    // the following are required to satisfy the orbitz consul client
+    compile "org.apache.cxf:cxf-rt-rs-client:3.0.3"
+    compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-def plumVer = "0.0.5"
+version = "0.0.6"
 
 jar {
     baseName = 'plum'
-    version = plumVer
     manifest {
         attributes("Implementation-Title": "consul4spring (plum)",
-                "Implementation-version": plumVer)
+                "Implementation-version": project.version)
     }
 }
 
@@ -35,7 +38,7 @@ publishing {
         maven(MavenPublication) {
             groupId 'ajk.plum'
             artifactId 'plum'
-            version plumVer
+            version project.version
 
             pom.withXml {
                 asNode().children().last() + {
@@ -68,7 +71,7 @@ publishing {
 
 model {
     tasks.generatePomFileForMavenPublication {
-        destination = file("$buildDir/libs/plum-${plumVer}.pom")
+        destination = file("$buildDir/libs/plum-${project.version}.pom")
     }
 }
 
@@ -78,14 +81,14 @@ task install(dependsOn: 'publishMavenPublicationToMavenLocal') << {
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
-    version = plumVer
+    version = project.version
 
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
-    version = plumVer
+    version = project.version
 
     from javadoc.destinationDir
 }
@@ -112,7 +115,7 @@ bintray {
         licenses = ['Apache-2.0']
         labels = ['spring-boot', 'consul']
         version {
-            name = plumVer
+            name = project.version
         }
     }
 }
