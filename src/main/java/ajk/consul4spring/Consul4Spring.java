@@ -278,6 +278,6 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Override
     public String resolveByNameAsClusterDefinition(String name) {
         Set<CatalogService> services = resolveByName(name);
-        return services.stream().map(cs -> cs.getAddress() + ":" + cs.getServicePort()).collect(joining(","));
+        return services.stream().map(cs -> cs.getServiceAddress() + ":" + cs.getServicePort()).collect(joining(","));
     }
 }
