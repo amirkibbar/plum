@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.google.common.base.Optional.absent;
 import static com.orbitz.consul.Consul.newClient;
 import static com.orbitz.consul.model.State.FAIL;
 import static com.orbitz.consul.model.State.PASS;
@@ -244,8 +245,12 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     }
 
     private Optional<String> findInternal(String key) {
-        KeyValueClient kvClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
-        return kvClient.getValueAsString(key);
+        try {
+            KeyValueClient kvClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+            return kvClient.getValueAsString(key);
+        } catch (NullPointerException npe) {
+            return absent();
+        }
     }
 
     @Override
