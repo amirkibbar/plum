@@ -39,6 +39,7 @@ import static com.orbitz.consul.model.State.PASS;
 import static com.orbitz.consul.option.QueryOptionsBuilder.builder;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
+import static org.springframework.util.StringUtils.isEmpty;
 
 @Service
 @Profile("consul")
@@ -179,7 +180,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
 
     private void check(String checkName, long ttl, State state, String note) {
         try {
-            log.info("[check " + checkName + "]: " + state);
+            log.info("[check " + checkName + "]: " + state + (isEmpty(note) ? "" : " " + note));
             AgentClient agentClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).agentClient();
             agentClient.registerCheck(toUniqueName(checkName), consulProperties.getServiceName() + " " + checkName, ttl);
             agentClient.check(toUniqueName(checkName), state, note);
