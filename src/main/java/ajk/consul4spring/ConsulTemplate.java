@@ -5,7 +5,7 @@ package ajk.consul4spring;
  */
 public interface ConsulTemplate {
     /**
-     * write a value to Consul
+     * writes a value to Consul
      *
      * @param key   the key
      * @param value the value. This could be anything, including a JSON representation of any object
@@ -13,7 +13,7 @@ public interface ConsulTemplate {
     void write(String key, String value);
 
     /**
-     * retrieve a value from Consul
+     * retrieves a value from Consul
      *
      * @param key the key
      * @return the value as a string, or null if the key was not found
@@ -21,7 +21,7 @@ public interface ConsulTemplate {
     String find(String key);
 
     /**
-     * retrieve a value from Consul converted to any object using a {@code com.fasterxml.jackson.databind.ObjectMapper}
+     * retrieves a value from Consul converted to any object using a {@code com.fasterxml.jackson.databind.ObjectMapper}
      * available in the spring context
      *
      * @param clazz the target class for the conversion
@@ -30,4 +30,11 @@ public interface ConsulTemplate {
      * @return the value converted to {@code clazz}, or null if the key was not found
      */
     <T> T findAndConvert(Class<T> clazz, String key);
+
+    /**
+     * recursively deletes a key if it exists
+     *
+     * @param key the key to delete
+     */
+    void delete(String key);
 }

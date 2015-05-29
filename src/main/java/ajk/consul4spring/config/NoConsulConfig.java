@@ -99,6 +99,16 @@ public class NoConsulConfig {
         public <T> T findAndConvert(Class<T> clazz, String key) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void delete(String key) {
+            Path keyFile = get(System.getProperty("java.io.tmpdir", "/tmp"), key);
+            try {
+                deleteIfExists(keyFile);
+            } catch (IOException e) {
+                log.error("error deleting " + keyFile.toAbsolutePath(), e);
+            }
+        }
     }
 
     private static class NoConsulDistributedLock implements DistributedLock {

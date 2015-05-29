@@ -217,6 +217,14 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     }
 
     @Override
+    public void delete(String key) {
+        String fullKey = consulProperties.getBaseKey() + key;
+        KeyValueClient keyValueClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+        keyValueClient.deleteKeys(fullKey);
+        log.info("deleted " + fullKey);
+    }
+
+    @Override
     public String find(String key) {
         String fullKey = consulProperties.getBaseKey() + key;
         Optional<String> value = findInternal(fullKey);
