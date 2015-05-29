@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.embedded.EmbeddedWebApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -160,21 +161,25 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     }
 
     @Override
+    @Async
     public void pass(String checkName, long ttl) {
         pass(checkName, ttl, null);
     }
 
     @Override
+    @Async
     public void pass(String checkName, long ttl, String note) {
         check(checkName, ttl, PASS, note);
     }
 
     @Override
+    @Async
     public void fail(String checkName, long ttl) {
         fail(checkName, ttl, null);
     }
 
     @Override
+    @Async
     public void fail(String checkName, long ttl, String note) {
         check(checkName, ttl, FAIL, note);
     }
