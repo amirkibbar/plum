@@ -132,7 +132,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
             registration.setName(consulProperties.getServiceName());
             registration.setTags(consulProperties.getTags());
             Registration.Check check = new Registration.Check();
-            check.setTtl(String.format("%ss", 20));
+            check.setTtl(String.format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
             registration.setCheck(check);
             agentClient.register(registration);
 
@@ -159,12 +159,15 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
      */
     @Override
     public void keepAlive() {
-        long ttl = (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000;
-        // the TTL is twice the heartbeat rate
-        ttl *= 2;
-
-        // the heartbeat is the service itself, not a check
-        check("heartbeat", ttl, PASS, "");
+        try {
+            AgentClient agentClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).agentClient();
+            // the heartbeat is the service itself, not a check - that's why we "pass" it and not "check" it
+            agentClient.pass(toUniqueName("heartbeat"));
+            log.info("[check heartbeat]: PASS");
+        } catch (NotRegisteredException e) {
+            log.error("[check heartbeat]: FAIL " + e.getMessage());
+            log.fatal("can't mark heartbeat as PASS", e);
+        }
     }
 
     @Override
