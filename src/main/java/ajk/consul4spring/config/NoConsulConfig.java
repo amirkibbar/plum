@@ -150,5 +150,9 @@ public class NoConsulConfig {
         public String toUniqueName(String nonUniqueName) {
             return nonUniqueName;
         }
+
+        @Override
+        public void keepAlive() {
+        }
     }
 }

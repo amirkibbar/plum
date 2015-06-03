@@ -157,6 +157,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
      * changes the heartbeat check to PASS in a configurable rate. The default rate is 15 minutes. The heartbeat check
      * is defined with a grace period of 2 heartbeats before it sets itself to FAIL.
      */
+    @Override
     public void keepAlive() {
         long ttl = (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000;
         // the TTL is twice the heartbeat rate

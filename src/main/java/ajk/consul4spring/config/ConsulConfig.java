@@ -1,6 +1,6 @@
 package ajk.consul4spring.config;
 
-import ajk.consul4spring.Consul4Spring;
+import ajk.consul4spring.CheckService;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +20,7 @@ public class ConsulConfig implements SchedulingConfigurer {
     private ConsulProperties consulProperties;
 
     @Autowired
-    private Consul4Spring consulService;
+    private CheckService consulService;
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {

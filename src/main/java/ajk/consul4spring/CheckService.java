@@ -50,4 +50,6 @@ public interface CheckService {
      * @return the unique name used to register the check in Consul
      */
     String toUniqueName(String nonUniqueName);
+
+    void keepAlive();
 }
