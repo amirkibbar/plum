@@ -21,6 +21,16 @@ public class ConsulProperties {
 
     private String[] tags;
 
+    private Integer heartbeatRate;
+
+    public Integer getHeartbeatRate() {
+        return heartbeatRate;
+    }
+
+    public void setHeartbeatRate(Integer heartbeatRate) {
+        this.heartbeatRate = heartbeatRate;
+    }
+
     public String getBaseKey() {
         return serviceName + "/" + serviceId;
     }

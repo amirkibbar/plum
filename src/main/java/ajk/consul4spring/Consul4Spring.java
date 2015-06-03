@@ -21,7 +21,6 @@ import org.springframework.boot.context.embedded.EmbeddedWebApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -46,6 +45,8 @@ import static org.springframework.util.StringUtils.isEmpty;
 @Service
 @Profile("consul")
 public class Consul4Spring implements CheckService, DistributedLock, ConsulTemplate, CatalogResolver {
+    public static int DEFAULT_HEARTBEAT_RATE = 900;
+
     private Log log = getLog(getClass());
 
     @Autowired
@@ -152,12 +153,17 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         }
     }
 
-    @Scheduled(fixedRate = 10000)
-    private void keepAlive() throws IOException, NotRegisteredException {
+    /**
+     * changes the heartbeat check to PASS in a configurable rate. The default rate is 15 minutes. The heartbeat check
+     * is defined with a grace period of 2 heartbeats before it sets itself to FAIL.
+     */
+    public void keepAlive() {
+        long ttl = (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000;
+        // the TTL is twice the heartbeat rate
+        ttl *= 2;
+
         // the heartbeat is the service itself, not a check
-        AgentClient agentClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).agentClient();
-        agentClient.pass(toUniqueName("heartbeat"));
-        log.info("[check heartbeat]: PASS");
+        check("heartbeat", ttl, PASS, "");
     }
 
     @Override
@@ -191,6 +197,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
             agentClient.registerCheck(toUniqueName(checkName), consulProperties.getServiceName() + " " + checkName, ttl);
             agentClient.check(toUniqueName(checkName), state, note);
         } catch (NotRegisteredException e) {
+            log.error("[check " + checkName + "]: FAIL " + e.getMessage());
             log.fatal("can't change check" + checkName + " to state " + state, e);
         }
     }

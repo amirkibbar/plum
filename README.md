@@ -41,7 +41,7 @@ This library requires Java 8 and works with Consul 0.5.0 or above.
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.1.1"
+        compile "ajk.plum:plum:0.1.2"
     }
 ```
 
@@ -58,6 +58,7 @@ In your application.yml, or in any other way supported by spring-boot, define th
       serviceId: my-service-id
       serviceName: PrettyName
       tags: some, tags
+      heartbeatRate: 900
 ```
 
 ### Load the Consul properties
