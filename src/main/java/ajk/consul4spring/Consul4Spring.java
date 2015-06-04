@@ -20,6 +20,9 @@ import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.embedded.EmbeddedWebApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.TimeoutRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -73,11 +76,39 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Autowired
     private ConfigurableApplicationContext ctx;
 
+    private Consul consul;
+
     @PostConstruct
     private void register() throws Exception {
         log.info(consulProperties);
         registerMyself();
         writeDefaultProperties();
+    }
+
+    private Consul getConsul() {
+        // test that the client is active - the purpose of this test is to make sure that the instance of consul in the
+        // cluster is alive, is it's not we'll create a new one before giving up. The assumption is that the hostname of
+        // consul is really a consul service that hides multiple instances of consul servers.
+        RetryTemplate retryTemplate = new RetryTemplate();
+        retryTemplate.setBackOffPolicy(new FixedBackOffPolicy());
+        TimeoutRetryPolicy retryPolicy = new TimeoutRetryPolicy();
+        retryPolicy.setTimeout(10000);
+        retryTemplate.setRetryPolicy(retryPolicy);
+
+        return retryTemplate.execute(context -> {
+            if (consul == null || consul.statusClient() == null || isEmpty(consul.statusClient().getLeader())) {
+                // if we can't find a leader this means that the consul client is not usable - we'll release it
+                log.warn("couldn't verify connection to Consul");
+                log.info("creating a new Consul client");
+                consul = newClient(consulProperties.getHostname(), consulProperties.getHttpPort());
+
+                // throwing this exception to retry according to the policies. The last retry will throw this exception
+                throw new IllegalStateException("Consul connection could not be verified");
+            } else {
+                log.info("Consul connection verified");
+                return consul;
+            }
+        });
     }
 
     private void writeDefaultProperties() {
@@ -88,7 +119,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
             return;
         }
 
-        KeyValueClient kvClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+        KeyValueClient kvClient = getConsul().keyValueClient();
 
         // only add the default values if they are not already there
         if (!kvClient.getValue(consulProperties.getBaseKey() + "/config/current", builder().blockSeconds(1, 60).build()).isPresent()) {
@@ -121,23 +152,13 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     }
 
     private void registerMyself() throws NotRegisteredException, IOException {
-        Consul consul = newClient(consulProperties.getHostname(), consulProperties.getHttpPort());
-        AgentClient agentClient = consul.agentClient();
+        AgentClient agentClient = getConsul().agentClient();
 
         if (!agentClient.isRegistered(consulProperties.getServiceId())) {
-            Registration registration = new Registration();
-            registration.setPort(serverProperties.getPort());
-            registration.setAddress(dnsResolver.readNonLoopbackLocalAddress());
-            registration.setId(toUniqueName("heartbeat"));
-            registration.setName(consulProperties.getServiceName());
-            registration.setTags(consulProperties.getTags());
-            Registration.Check check = new Registration.Check();
-            check.setTtl(String.format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
-            registration.setCheck(check);
-            agentClient.register(registration);
+            registerHeartbeat();
 
             log.info("writing service access properties");
-            KeyValueClient kvClient = consul.keyValueClient();
+            KeyValueClient kvClient = getConsul().keyValueClient();
             Map<String, String> accessProperties = new HashMap<>();
             String serverName = InetAddress.getLocalHost().getHostName();
             accessProperties.put("hostname", serverName);
@@ -153,6 +174,21 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         }
     }
 
+    private void registerHeartbeat() {
+        log.info("registering heartbeat");
+        AgentClient agentClient = getConsul().agentClient();
+        Registration registration = new Registration();
+        registration.setPort(serverProperties.getPort());
+        registration.setAddress(dnsResolver.readNonLoopbackLocalAddress());
+        registration.setId(toUniqueName("heartbeat"));
+        registration.setName(consulProperties.getServiceName());
+        registration.setTags(consulProperties.getTags());
+        Registration.Check check = new Registration.Check();
+        check.setTtl(String.format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
+        registration.setCheck(check);
+        agentClient.register(registration);
+    }
+
     /**
      * changes the heartbeat check to PASS in a configurable rate. The default rate is 15 minutes. The heartbeat check
      * is defined with a grace period of 2 heartbeats before it sets itself to FAIL.
@@ -160,13 +196,14 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Override
     public void keepAlive() {
         try {
-            AgentClient agentClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).agentClient();
+            AgentClient agentClient = getConsul().agentClient();
             // the heartbeat is the service itself, not a check - that's why we "pass" it and not "check" it
             agentClient.pass(toUniqueName("heartbeat"));
             log.info("[check heartbeat]: PASS");
         } catch (NotRegisteredException e) {
             log.error("[check heartbeat]: FAIL " + e.getMessage());
-            log.fatal("can't mark heartbeat as PASS", e);
+            log.error("can't mark heartbeat as PASS", e);
+            registerHeartbeat();
         }
     }
 
@@ -197,7 +234,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     private void check(String checkName, long ttl, State state, String note) {
         try {
             log.info("[check " + checkName + "]: " + state + (isEmpty(note) ? "" : " " + note));
-            AgentClient agentClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).agentClient();
+            AgentClient agentClient = getConsul().agentClient();
             agentClient.registerCheck(toUniqueName(checkName), consulProperties.getServiceName() + " " + checkName, ttl);
             agentClient.check(toUniqueName(checkName), state, note);
         } catch (NotRegisteredException e) {
@@ -236,7 +273,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Override
     public void delete(String key) {
         String fullKey = consulProperties.getBaseKey() + key;
-        KeyValueClient keyValueClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+        KeyValueClient keyValueClient = getConsul().keyValueClient();
         keyValueClient.deleteKeys(fullKey);
         log.info("deleted " + fullKey);
     }
@@ -256,13 +293,13 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Override
     public void write(String key, String value) {
         String fullKey = consulProperties.getBaseKey() + key;
-        KeyValueClient kvClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+        KeyValueClient kvClient = getConsul().keyValueClient();
         kvClient.putValue(fullKey, value);
     }
 
     private Optional<String> findInternal(String key) {
         try {
-            KeyValueClient kvClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).keyValueClient();
+            KeyValueClient kvClient = getConsul().keyValueClient();
             return kvClient.getValueAsString(key);
         } catch (NullPointerException npe) {
             return absent();
@@ -271,10 +308,9 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
 
     @Override
     public String acquire() {
-        Consul consul = newClient(consulProperties.getHostname(), consulProperties.getHttpPort());
-        SessionClient sessionClient = consul.sessionClient();
+        SessionClient sessionClient = getConsul().sessionClient();
         String sessionId = sessionClient.createSession("{\"ttl\": \"3600s\"}").get();
-        KeyValueClient kvClient = consul.keyValueClient();
+        KeyValueClient kvClient = getConsul().keyValueClient();
         if (kvClient.acquireLock(consulProperties.getBaseKey() + "/lock", sessionId)) {
             log.info("lock " + sessionId + " acquired");
             return sessionId;
@@ -287,16 +323,15 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
     @Override
     public void release(String lockId) {
         log.info("releasing lock " + lockId);
-        Consul consul = newClient(consulProperties.getHostname(), consulProperties.getHttpPort());
-        KeyValueClient kvClient = consul.keyValueClient();
+        KeyValueClient kvClient = getConsul().keyValueClient();
         kvClient.releaseLock(consulProperties.getBaseKey() + "/lock", lockId);
-        SessionClient sessionClient = consul.sessionClient();
+        SessionClient sessionClient = getConsul().sessionClient();
         sessionClient.destroySession(lockId);
     }
 
     @Override
     public Set<CatalogService> resolveByName(String name) {
-        CatalogClient catalogClient = newClient(consulProperties.getHostname(), consulProperties.getHttpPort()).catalogClient();
+        CatalogClient catalogClient = getConsul().catalogClient();
 
         List<CatalogService> catalogServices = catalogClient.getService(name).getResponse();
         Set<CatalogService> result = new TreeSet<>((o1, o2) -> o1.getServiceName().compareToIgnoreCase(o2.getServiceName()));

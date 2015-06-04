@@ -14,6 +14,7 @@ repositories {
 dependencies {
     compile "org.springframework.boot:spring-boot:1.2.3.RELEASE"
     compile "org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE"
+    compile "org.springframework.retry:spring-retry:1.1.2.RELEASE"
     compile "com.orbitz.consul:consul-client:0.9.1"
     compile "dnsjava:dnsjava:2.1.7"
     compile "commons-io:commons-io:2.4"
@@ -23,7 +24,7 @@ dependencies {
     compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-version = "0.1.4"
+version = "0.1.5"
 
 jar {
     baseName = 'plum'
