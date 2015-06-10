@@ -1,6 +1,7 @@
 # consul4spring
 A spring-boot extension aimed at using Consul as a micro service registration
 
+[ ![Build Status](https://travis-ci.org/amirkibbar/plum.svg?branch=master) ](https://travis-ci.org/amirkibbar/plum)
 [ ![Download](https://api.bintray.com/packages/amirk/maven/consul4spring/images/download.svg) ](https://bintray.com/amirk/maven/consul4spring/_latestVersion)
 
 # Overview
