@@ -41,8 +41,12 @@ import static com.orbitz.consul.Consul.newClient;
 import static com.orbitz.consul.model.State.FAIL;
 import static com.orbitz.consul.model.State.PASS;
 import static com.orbitz.consul.option.QueryOptionsBuilder.builder;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
+import static org.apache.http.client.fluent.Executor.newInstance;
+import static org.apache.http.client.fluent.Request.Put;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.springframework.util.StringUtils.isEmpty;
 
 @Service
@@ -184,7 +188,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         registration.setName(consulProperties.getServiceName());
         registration.setTags(consulProperties.getTags());
         Registration.Check check = new Registration.Check();
-        check.setTtl(String.format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
+        check.setTtl(format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
         registration.setCheck(check);
         agentClient.register(registration);
     }
@@ -235,9 +239,31 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         try {
             log.info("[check " + checkName + "]: " + state + (isEmpty(note) ? "" : " " + note));
             AgentClient agentClient = getConsul().agentClient();
-            agentClient.registerCheck(toUniqueName(checkName), consulProperties.getServiceName() + " " + checkName, ttl);
+/*
+the following will be possible if consul-client accept my pull request:
+
+            Check check = new Check();
+            check.setId(toUniqueName(checkName));
+            check.setName(consulProperties.getServiceName() + " " + checkName);
+            check.setServiceId(toUniqueName("heartbeat"));
+            check.setTtl(format("%ss", ttl));
+            agentClient.registerCheck(check);
+*/
+
+            //  in the mean time I'll have to register this check manually, here's the patch
+            Map<String, String> check = new HashMap<>();
+            check.put("ID", toUniqueName(checkName));
+            check.put("Name", consulProperties.getServiceName() + " " + checkName);
+            check.put("Service_id", toUniqueName("heartbeat"));
+            check.put("TTL", format("%ss", ttl));
+            newInstance().execute(
+                    Put("http://" + consulProperties.getHostname() + ":" + consulProperties.getHttpPort() + "/v1/agent/check/register")
+                            .bodyString(mapper.writeValueAsString(check), APPLICATION_JSON)).discardContent();
+
+            // end of patch
+
             agentClient.check(toUniqueName(checkName), state, note);
-        } catch (NotRegisteredException e) {
+        } catch (Exception e) {
             log.error("[check " + checkName + "]: FAIL " + e.getMessage());
             log.fatal("can't change check" + checkName + " to state " + state, e);
         }

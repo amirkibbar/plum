@@ -6,6 +6,7 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 
 repositories {
+    mavenLocal()
     jcenter()
     maven { url "http://repo.spring.io/milestone" }
     maven { url "https://bintray.com/artifact/download/orbitz/consul-client" }
@@ -15,16 +16,17 @@ dependencies {
     compile "org.springframework.boot:spring-boot:1.2.3.RELEASE"
     compile "org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE"
     compile "org.springframework.retry:spring-retry:1.1.2.RELEASE"
-    compile "com.orbitz.consul:consul-client:0.9.1"
+    compile "com.orbitz.consul:consul-client:0.9.3"
     compile "dnsjava:dnsjava:2.1.7"
     compile "commons-io:commons-io:2.4"
+    compile "org.apache.httpcomponents:fluent-hc:4.5"
 
     // the following are required to satisfy the orbitz consul client
     compile "org.apache.cxf:cxf-rt-rs-client:3.0.3"
     compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-version = "0.1.5"
+version = "0.1.6"
 
 jar {
     baseName = 'plum'
