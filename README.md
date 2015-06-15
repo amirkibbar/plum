@@ -116,9 +116,9 @@ CheckService:
       
       public void myHealthReport() {
         if(something) {
-          checkService.pass("something", 2000 /* TTL in milliseconds */, "notes");
+          checkService.pass("something", 2 /* TTL in seconds */, "notes");
         } else {
-          checkService.fail("something", 2000 /* TTL in milliseconds */, "notes");
+          checkService.fail("something", 2 /* TTL in seconds */, "notes");
         }
       }
     }

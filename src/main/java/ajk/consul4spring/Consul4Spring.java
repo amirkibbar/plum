@@ -186,7 +186,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         registration.setName(consulProperties.getServiceName());
         registration.setTags(consulProperties.getTags());
         Registration.Check check = new Registration.Check();
-        check.setTtl(format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate()) * 1000));
+        check.setTtl(format("%ss", 2 * (consulProperties.getHeartbeatRate() == null ? DEFAULT_HEARTBEAT_RATE : consulProperties.getHeartbeatRate())));
         registration.setCheck(check);
         agentClient.register(registration);
     }

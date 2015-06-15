@@ -9,7 +9,7 @@ public interface CheckService {
      * pass a check
      *
      * @param checkName the check name
-     * @param ttl       time to live in milliseconds. when this time period passes Consul will mark the check as failed
+     * @param ttl       time to live in seconds. when this time period passes Consul will mark the check as failed
      *                  unless you change the state of the check to "pass" again
      */
     void pass(String checkName, long ttl);
@@ -18,7 +18,7 @@ public interface CheckService {
      * pass a check
      *
      * @param checkName the check name
-     * @param ttl       time to live in milliseconds. when this time period passes Consul will mark the check as failed
+     * @param ttl       time to live in seconds. when this time period passes Consul will mark the check as failed
      *                  unless you change the state of the check to "pass" again
      * @param note      a note that will appear in the Consul UI/API next to this check
      */
@@ -28,7 +28,7 @@ public interface CheckService {
      * fail a check
      *
      * @param checkName the check name
-     * @param ttl       time to live in milliseconds. when this time period passes Consul will mark the check as failed
+     * @param ttl       time to live in seconds. when this time period passes Consul will mark the check as failed
      *                  unless you change the state of the check to "pass" again
      */
     void fail(String checkName, long ttl);
@@ -37,7 +37,7 @@ public interface CheckService {
      * fail a check
      *
      * @param checkName the check name
-     * @param ttl       time to live in milliseconds. when this time period passes Consul will mark the check as failed
+     * @param ttl       time to live in seconds. when this time period passes Consul will mark the check as failed
      *                  unless you change the state of the check to "pass" again
      * @param note      a note that will appear in the Consul UI/API next to this check
      */
