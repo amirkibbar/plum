@@ -16,17 +16,16 @@ dependencies {
     compile "org.springframework.boot:spring-boot:1.2.3.RELEASE"
     compile "org.springframework.boot:spring-boot-autoconfigure:1.2.3.RELEASE"
     compile "org.springframework.retry:spring-retry:1.1.2.RELEASE"
-    compile "com.orbitz.consul:consul-client:0.9.3"
+    compile "com.orbitz.consul:consul-client:0.9.4"
     compile "dnsjava:dnsjava:2.1.7"
     compile "commons-io:commons-io:2.4"
-    compile "org.apache.httpcomponents:fluent-hc:4.5"
 
     // the following are required to satisfy the orbitz consul client
     compile "org.apache.cxf:cxf-rt-rs-client:3.0.3"
     compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-version = "0.1.6"
+version = "0.1.7"
 
 jar {
     baseName = 'plum'
