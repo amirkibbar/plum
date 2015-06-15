@@ -42,7 +42,7 @@ This library requires Java 8 and works with Consul 0.5.0 or above.
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.1.6"
+        compile "ajk.plum:plum:0.1.7"
     }
 ```
 
