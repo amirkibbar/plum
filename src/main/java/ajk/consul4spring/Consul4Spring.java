@@ -158,22 +158,22 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
 
         if (!agentClient.isRegistered(consulProperties.getServiceId())) {
             registerHeartbeat();
-
-            log.info("writing service access properties");
-            KeyValueClient kvClient = getConsul().keyValueClient();
-            Map<String, String> accessProperties = new HashMap<>();
-            String serverName = InetAddress.getLocalHost().getHostName();
-            accessProperties.put("hostname", serverName);
-            accessProperties.put("ip", dnsResolver.readNonLoopbackLocalAddress());
-            String port = String.valueOf(serverProperties.getPort());
-            accessProperties.put("port", port);
-            accessProperties.put("username", securityProperties.getUser().getName());
-            accessProperties.put("password", securityProperties.getUser().getPassword());
-
-            // read current access values and add ourselves
-            String accessKey = consulProperties.getServiceName() + "/access/" + serverName + ":" + port;
-            kvClient.putValue(accessKey, mapper.writeValueAsString(accessProperties));
         }
+
+        log.info("writing service access properties");
+        KeyValueClient kvClient = getConsul().keyValueClient();
+        Map<String, String> accessProperties = new HashMap<>();
+        String serverName = InetAddress.getLocalHost().getHostName();
+        accessProperties.put("hostname", serverName);
+        accessProperties.put("ip", dnsResolver.readNonLoopbackLocalAddress());
+        String port = String.valueOf(serverProperties.getPort());
+        accessProperties.put("port", port);
+        accessProperties.put("username", securityProperties.getUser().getName());
+        accessProperties.put("password", securityProperties.getUser().getPassword());
+
+        // read current access values and add ourselves
+        String accessKey = consulProperties.getServiceName() + "/access/" + serverName + ":" + port;
+        kvClient.putValue(accessKey, mapper.writeValueAsString(accessProperties));
     }
 
     private void registerHeartbeat() {
