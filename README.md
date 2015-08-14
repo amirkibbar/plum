@@ -2,7 +2,10 @@
 A spring-boot extension aimed at using Consul as a micro service registration
 
 [ ![Build Status](https://travis-ci.org/amirkibbar/plum.svg?branch=master) ](https://travis-ci.org/amirkibbar/plum)
+
 [ ![Download](https://api.bintray.com/packages/amirk/maven/consul4spring/images/download.svg) ](https://bintray.com/amirk/maven/consul4spring/_latestVersion)
+
+[ ![Project Status](http://stillmaintained.com/amirkibbar/plum.png) ](https://stillmaintained.com/amirkibbar/plum)
 
 # Overview
 
@@ -233,4 +236,7 @@ and metadata be both human and machine readable. The directory structure is:
               configuration you're expected to edit this value. It's up to you to read the value from here and to let
               your application know that the value has changed.
         - lock - if you use the distributed lock, then this is where the key used to acquire the lock will be created.
-        
+
+# References
+
+See [JavaDocs](http://amirkibbar.github.io/plum/) for more details
