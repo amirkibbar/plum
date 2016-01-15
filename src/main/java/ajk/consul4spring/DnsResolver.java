@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
+import org.xbill.DNS.PTRRecord;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.SRVRecord;
@@ -17,16 +18,23 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.of;
 import static org.apache.commons.logging.LogFactory.getLog;
+import static org.springframework.util.StringUtils.collectionToCommaDelimitedString;
+import static org.xbill.DNS.ReverseMap.fromAddress;
 import static org.xbill.DNS.Type.A;
+import static org.xbill.DNS.Type.PTR;
 import static org.xbill.DNS.Type.SRV;
 
 /**
  * a convenient way to resolve SRV records in a DNS
  */
+@SuppressWarnings("unused")
 @Component
 public class DnsResolver {
     private Log log = getLog(getClass());
@@ -41,6 +49,61 @@ public class DnsResolver {
     public String resolveServiceByName(String name) {
         return resolveSrvByName(null, name);
 
+    }
+
+    /**
+     * resolves an A record by its name using a specified DNS host and port
+     *
+     * @param resolverHost name server hostname or IP address
+     * @param resolverPort name server port
+     * @param name         the DNS name of the A record - the name to resolve
+     * @return a comma separated list of IP addresses or an empty string when unable to resolve
+     */
+    public String resolveHostByName(String resolverHost, int resolverPort, String name) {
+        try {
+            SimpleResolver resolver = new SimpleResolver(resolverHost);
+            resolver.setPort(resolverPort);
+
+            Lookup lookup = new Lookup(name, A);
+
+            List<String> addresses =
+                    of(lookup.run())
+                            .filter(it -> it instanceof ARecord)
+                            .map(it -> ((ARecord) it).getAddress().getHostAddress())
+                            .collect(toList());
+
+            return collectionToCommaDelimitedString(addresses);
+        } catch (UnknownHostException | TextParseException e) {
+            log.warn("unable to resolve using SRV record " + name, e);
+            return "";
+        }
+    }
+
+    /**
+     * reverse lookup an IP address using a specified DNS host and port
+     *
+     * @param resolverHost name server hostname or IP address
+     * @param resolverPort name server port
+     * @param address      the IP address to reverse lookup
+     * @return a comma separated list of names or an empty string when unable to resolve
+     */
+    public String reverseLookupByAddress(String resolverHost, int resolverPort, InetAddress address) {
+        try {
+            SimpleResolver resolver = new SimpleResolver(resolverHost);
+            resolver.setPort(resolverPort);
+
+            Lookup lookup = new Lookup(fromAddress(address), PTR);
+            List<String> addresses =
+                    of(lookup.run())
+                            .filter(it -> it instanceof PTRRecord)
+                            .map(it -> ((PTRRecord) it).getTarget().toString())
+                            .collect(toList());
+
+            return collectionToCommaDelimitedString(addresses);
+        } catch (UnknownHostException e) {
+            log.warn("unable to resolve using SRV record " + address, e);
+            return "";
+        }
     }
 
     /**
@@ -124,7 +187,7 @@ public class DnsResolver {
             lookup.setResolver(resolver);
         }
         Record[] records = lookup.run();
-        java.util.Optional<InetAddress> address = of(records)
+        Optional<InetAddress> address = of(records)
                 .filter(it -> it instanceof ARecord)
                 .map(a -> ((ARecord) a).getAddress())
                 .findFirst();
