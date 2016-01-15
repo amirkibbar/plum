@@ -65,14 +65,18 @@ public class DnsResolver {
             resolver.setPort(resolverPort);
 
             Lookup lookup = new Lookup(name, A);
+            Record[] records = lookup.run();
+            if(records!=null) {
+                List<String> addresses =
+                        of(records)
+                                .filter(it -> it instanceof ARecord)
+                                .map(it -> ((ARecord) it).getAddress().getHostAddress())
+                                .collect(toList());
 
-            List<String> addresses =
-                    of(lookup.run())
-                            .filter(it -> it instanceof ARecord)
-                            .map(it -> ((ARecord) it).getAddress().getHostAddress())
-                            .collect(toList());
-
-            return collectionToCommaDelimitedString(addresses);
+                return collectionToCommaDelimitedString(addresses);
+            } else {
+                return "";
+            }
         } catch (UnknownHostException | TextParseException e) {
             log.warn("unable to resolve using SRV record " + name, e);
             return "";
@@ -93,13 +97,18 @@ public class DnsResolver {
             resolver.setPort(resolverPort);
 
             Lookup lookup = new Lookup(fromAddress(address), PTR);
-            List<String> addresses =
-                    of(lookup.run())
-                            .filter(it -> it instanceof PTRRecord)
-                            .map(it -> ((PTRRecord) it).getTarget().toString())
-                            .collect(toList());
+            Record[] records = lookup.run();
+            if(records!=null) {
+                List<String> addresses =
+                        of(records)
+                                .filter(it -> it instanceof PTRRecord)
+                                .map(it -> ((PTRRecord) it).getTarget().toString())
+                                .collect(toList());
 
-            return collectionToCommaDelimitedString(addresses);
+                return collectionToCommaDelimitedString(addresses);
+            } else {
+                return "";
+            }
         } catch (UnknownHostException e) {
             log.warn("unable to resolve using SRV record " + address, e);
             return "";
