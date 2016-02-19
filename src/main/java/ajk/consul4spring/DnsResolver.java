@@ -10,6 +10,7 @@ import org.xbill.DNS.Record;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.SRVRecord;
 import org.xbill.DNS.SimpleResolver;
+import org.xbill.DNS.TXTRecord;
 import org.xbill.DNS.TextParseException;
 
 import java.net.Inet4Address;
@@ -30,6 +31,7 @@ import static org.xbill.DNS.ReverseMap.fromAddress;
 import static org.xbill.DNS.Type.A;
 import static org.xbill.DNS.Type.PTR;
 import static org.xbill.DNS.Type.SRV;
+import static org.xbill.DNS.Type.TXT;
 
 /**
  * a convenient way to resolve SRV records in a DNS
@@ -66,7 +68,7 @@ public class DnsResolver {
 
             Lookup lookup = new Lookup(name, A);
             Record[] records = lookup.run();
-            if(records!=null) {
+            if (records != null) {
                 List<String> addresses =
                         of(records)
                                 .filter(it -> it instanceof ARecord)
@@ -78,7 +80,40 @@ public class DnsResolver {
                 return "";
             }
         } catch (UnknownHostException | TextParseException e) {
-            log.warn("unable to resolve using SRV record " + name, e);
+            log.warn("unable to resolve using A record " + name, e);
+            return "";
+        }
+    }
+
+    /**
+     * resolves the TXT field for a given name using a specified DNS host and port. This is useful, for example,
+     * if you want to resolve abusers with: <a href="https://abusix.com/contactdb.html">https://abusix.com/contactdb.html</a>
+     *
+     * @param resolverHost name server hostname or IP address
+     * @param resolverPort name server port
+     * @param name         the DNS name of the TXT record - the name to resolve
+     * @return the resolved text
+     */
+    public String resolveTextByName(String resolverHost, int resolverPort, String name) {
+        try {
+            SimpleResolver resolver = new SimpleResolver(resolverHost);
+            resolver.setPort(resolverPort);
+
+            Lookup lookup = new Lookup(name, TXT);
+            Record[] records = lookup.run();
+            if (records != null) {
+                List<String> addresses =
+                        of(records)
+                                .filter(it -> it instanceof TXTRecord)
+                                .map(it -> collectionToCommaDelimitedString(((TXTRecord) it).getStrings()))
+                                .collect(toList());
+
+                return collectionToCommaDelimitedString(addresses);
+            } else {
+                return "";
+            }
+        } catch (UnknownHostException | TextParseException e) {
+            log.warn("unable to resolve using TXT record " + name, e);
             return "";
         }
     }
@@ -98,7 +133,7 @@ public class DnsResolver {
 
             Lookup lookup = new Lookup(fromAddress(address), PTR);
             Record[] records = lookup.run();
-            if(records!=null) {
+            if (records != null) {
                 List<String> addresses =
                         of(records)
                                 .filter(it -> it instanceof PTRRecord)
