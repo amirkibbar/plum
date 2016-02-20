@@ -5,8 +5,6 @@ A spring-boot extension aimed at using Consul as a micro service registration
 
 [ ![Download](https://api.bintray.com/packages/amirk/maven/consul4spring/images/download.svg) ](https://bintray.com/amirk/maven/consul4spring/_latestVersion)
 
-[ ![Project Status](http://stillmaintained.com/amirkibbar/plum.png) ](https://stillmaintained.com/amirkibbar/plum)
-
 # Overview
 
 This library is some glue-code that I needed to write my first micro service. I wanted my micro service to use 
@@ -45,7 +43,7 @@ This library requires Java 8 and works with Consul 0.5.0 or above.
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.1.9"
+        compile "ajk.plum:plum:0.1.12"
     }
 ```
 
