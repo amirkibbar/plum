@@ -43,6 +43,8 @@ import static com.orbitz.consul.model.State.FAIL;
 import static com.orbitz.consul.model.State.PASS;
 import static com.orbitz.consul.option.QueryOptionsBuilder.builder;
 import static java.lang.String.format;
+import static java.time.LocalDateTime.now;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -124,7 +126,10 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         KeyValueClient kvClient = getConsul().keyValueClient();
 
         // only add the default values if they are not already there
-        if (!kvClient.getValue(consulProperties.getBaseKey() + "/config/current", builder().blockSeconds(1, 60).build()).isPresent()) {
+        Optional<String> currentValue = findInternal(consulProperties.getBaseKey() + "/config/current");
+
+        kvClient.getValue(consulProperties.getBaseKey() + "/config/current", builder().blockSeconds(1, 60).build());
+        if (!currentValue.isPresent()) {
             try {
                 log.info("writing configuration to consul using default values: " + defaultProperties);
                 kvClient.putValue(consulProperties.getBaseKey() + "/config/current", mapper.writeValueAsString(defaultProperties));
@@ -134,7 +139,28 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
                 throw new IllegalStateException("unable to write default configuration to consul", e);
             }
         } else {
-            log.info("configuration already exist in consul, not overwriting with defaults");
+            log.info("configuration already exists in consul");
+            try {
+                Object currentProperties = mapper.readValue(currentValue.get(), defaultProperties.getClass());
+                if (currentProperties.equals(defaultProperties)) {
+                    log.info("no changes between current config and default properties");
+                } else if (defaultProperties.getClass().getAnnotation(DefaultProperties.class).overrideExisting()) {
+                    String backupKey = consulProperties.getBaseKey() + "/config/backup-" + ISO_LOCAL_DATE.format(now());
+                    log.info("backing up current config to " + backupKey);
+                    kvClient.putValue(backupKey, currentValue.get());
+
+                    log.info("writing configuration to consul using default values: " + defaultProperties);
+                    kvClient.deleteKey(consulProperties.getBaseKey() + "/config/current");
+                    kvClient.deleteKey(consulProperties.getBaseKey() + "/config/defaults");
+                    kvClient.putValue(consulProperties.getBaseKey() + "/config/current", mapper.writeValueAsString(defaultProperties));
+                    kvClient.putValue(consulProperties.getBaseKey() + "/config/defaults", mapper.writeValueAsString(defaultProperties));
+                } else {
+                    log.info("default properties differ from the existing properties, not overriding. If you want to override use @DefaultPropertieS(overrideExisting=true)");
+                }
+            } catch (IOException e) {
+                log.error("unable to load current properties from " + consulProperties.getBaseKey() +
+                        "/config/current as " + defaultProperties.getClass().getName(), e);
+            }
         }
     }
 

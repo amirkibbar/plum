@@ -13,4 +13,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(TYPE)
 public @interface DefaultProperties {
+    /**
+     * when true Consul4Spring will compare the existing properties with the ones provided by the application, if they're
+     * not equal then the existing properties will be moved to a backup location in Consul and the properties provided
+     * by the application will be written instead. This is a convenient way to upgrade the "current" configuration
+     *
+     * @return whether or not to override the default properties that already exist in Consul
+     */
+    boolean overrideExisting() default false;
 }
