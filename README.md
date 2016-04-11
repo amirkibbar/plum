@@ -43,7 +43,7 @@ This library requires Java 8 and works with Consul 0.5.0 or above.
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.1.12"
+        compile "ajk.plum:plum:0.1.14"
     }
 ```
 
@@ -82,11 +82,14 @@ it as JSON. To define your default properties object just annotate anything in t
     
     import ajk.consul4spring.DefaultProperties
     
-    @DefaultProperties
+    @DefaultProperties(overrideExisting = true)
     public class MyProperties {
       ...
     }
 ```
+
+You can opt-in to automatically backing and override the existing configuration with the properties provided with the
+```overrideExisting=true``` switch. By default this feature is off (for backwards compatibility).
 
 ### Activate the consul profile
 
