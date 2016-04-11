@@ -44,7 +44,7 @@ import static com.orbitz.consul.model.State.PASS;
 import static com.orbitz.consul.option.QueryOptionsBuilder.builder;
 import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -145,7 +145,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
                 if (currentProperties.equals(defaultProperties)) {
                     log.info("no changes between current config and default properties");
                 } else if (defaultProperties.getClass().getAnnotation(DefaultProperties.class).overrideExisting()) {
-                    String backupKey = consulProperties.getBaseKey() + "/config/backup-" + ISO_LOCAL_DATE.format(now());
+                    String backupKey = consulProperties.getBaseKey() + "/config/backup-" + ISO_LOCAL_DATE_TIME.format(now());
                     log.info("backing up current config to " + backupKey);
                     kvClient.putValue(backupKey, currentValue.get());
 

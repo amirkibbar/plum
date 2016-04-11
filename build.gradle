@@ -36,7 +36,7 @@ dependencies {
     compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-version = "0.1.13"
+version = "0.1.14"
 
 jar {
     baseName = 'plum'
