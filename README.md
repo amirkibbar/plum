@@ -43,7 +43,7 @@ This library requires Java 8 and works with Consul 0.5.0 or above.
     }
     
     dependencies {
-        compile "ajk.plum:plum:0.1.14"
+        compile "ajk.plum:plum:0.2.0"
     }
 ```
 
@@ -82,14 +82,20 @@ it as JSON. To define your default properties object just annotate anything in t
     
     import ajk.consul4spring.DefaultProperties
     
-    @DefaultProperties(overrideExisting = true)
+    @DefaultProperties(version = "some version")
     public class MyProperties {
       ...
     }
 ```
 
-You can opt-in to automatically backing and override the existing configuration with the properties provided with the
-```overrideExisting=true``` switch. By default this feature is off (for backwards compatibility).
+The "version" property determines the application's configuration version versus the configuration registered in Consul.
+If the versions differ the existing configuration already registered in Consul is backed up and the provided
+DefaultProperties are registered instead. This mechanism allows both changing configuration values in Consul and an easy
+way to upgrade configurations.
+
+The version is a simple text, there's no restriction on what can appear in it. A simple "equals" comparison is run
+against the registered configuration version in Consul and the configuration is replaced is it is "not equals" to the
+version provided by the application.
 
 ### Activate the consul profile
 
@@ -224,18 +230,15 @@ and metadata be both human and machine readable. The directory structure is:
           ```{"hostname":"my-server","password":"6fc3627c-5648-48c4-8e22-92cf8627dc0c","port":"8080","ip":"1.2.3.4","username":"user"}```.
           This information allows other micro services to access and use your application.
     - serviceId - the service ID as entered in the consul property consul.serviceId. The purpose of this folder is to
-      hold the default and current configuration of your application. Since there could be several versions of your
-      application running at the same time, you can use a different serviceId for each version, this way newer versions
-      could be installed and run while older versions are still running, or you can write some upgrade procedure in the
-      newer version that takes the configuration from the previous version and upgrades it.
+      hold the current configuration of your application. Since there could be several versions of your application
+      running at the same time, you can use a different serviceId for each version, this way newer versions could be
+      installed and run while older versions are still running, or you can write some upgrade procedure in the newer
+      version that takes the configuration from the previous version and upgrades it.
         - config - the root folder for the configuration of your application
-            - defaults - the @DefaultProperties object in JSON form representing the default configuration of your 
-              application. This is here for reference if you configure your current configuration incorrectly and want 
-              to revert back to the defaults.
-            - current - the current configuration of your application. On registration (the first time your application
-              starts) this is simply copied from the defaults value. When you want to change your application
+            - current - the current configuration of your application. When you want to change your application
               configuration you're expected to edit this value. It's up to you to read the value from here and to let
               your application know that the value has changed.
+            - current-version - the version of the currently registered configuration
         - lock - if you use the distributed lock, then this is where the key used to acquire the lock will be created.
 
 # References

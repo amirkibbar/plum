@@ -49,6 +49,7 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.logging.LogFactory.getLog;
 import static org.springframework.util.StringUtils.isEmpty;
 
+@SuppressWarnings("Guava")
 @Service
 @Profile("consul")
 public class Consul4Spring implements CheckService, DistributedLock, ConsulTemplate, CatalogResolver {
@@ -125,15 +126,17 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
 
         KeyValueClient kvClient = getConsul().keyValueClient();
 
-        // only add the default values if they are not already there
+        // only add the current values if they are not already there
         Optional<String> currentValue = findInternal(consulProperties.getBaseKey() + "/config/current");
+        Optional<String> currentVersion = findInternal(consulProperties.getBaseKey() + "/config/current-version");
+        String appConfigVersion = defaultProperties.getClass().getAnnotation(DefaultProperties.class).version();
 
         kvClient.getValue(consulProperties.getBaseKey() + "/config/current", builder().blockSeconds(1, 60).build());
         if (!currentValue.isPresent()) {
             try {
                 log.info("writing configuration to consul using default values: " + defaultProperties);
                 kvClient.putValue(consulProperties.getBaseKey() + "/config/current", mapper.writeValueAsString(defaultProperties));
-                kvClient.putValue(consulProperties.getBaseKey() + "/config/defaults", mapper.writeValueAsString(defaultProperties));
+                kvClient.putValue(consulProperties.getBaseKey() + "/config/current-version", appConfigVersion);
             } catch (JsonProcessingException e) {
                 log.fatal("unable to write default configuration to consul", e);
                 throw new IllegalStateException("unable to write default configuration to consul", e);
@@ -141,21 +144,17 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         } else {
             log.info("configuration already exists in consul");
             try {
-                Object currentProperties = mapper.readValue(currentValue.get(), defaultProperties.getClass());
-                if (currentProperties.equals(defaultProperties)) {
-                    log.info("no changes between current config and default properties");
-                } else if (defaultProperties.getClass().getAnnotation(DefaultProperties.class).overrideExisting()) {
+                if (!currentVersion.isPresent() || !currentValue.get().equals(appConfigVersion)) {
                     String backupKey = consulProperties.getBaseKey() + "/config/backup-" + ISO_LOCAL_DATE_TIME.format(now());
                     log.info("backing up current config to " + backupKey);
                     kvClient.putValue(backupKey, currentValue.get());
 
                     log.info("writing configuration to consul using default values: " + defaultProperties);
                     kvClient.deleteKey(consulProperties.getBaseKey() + "/config/current");
-                    kvClient.deleteKey(consulProperties.getBaseKey() + "/config/defaults");
                     kvClient.putValue(consulProperties.getBaseKey() + "/config/current", mapper.writeValueAsString(defaultProperties));
-                    kvClient.putValue(consulProperties.getBaseKey() + "/config/defaults", mapper.writeValueAsString(defaultProperties));
+                    kvClient.putValue(consulProperties.getBaseKey() + "/config/current-version", appConfigVersion);
                 } else {
-                    log.info("default properties differ from the existing properties, not overriding. If you want to override use @DefaultPropertieS(overrideExisting=true)");
+                    log.info("no difference found between the current configuration version and the Consul configuration version, no action taken");
                 }
             } catch (IOException e) {
                 log.error("unable to load current properties from " + consulProperties.getBaseKey() +

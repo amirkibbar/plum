@@ -14,11 +14,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(TYPE)
 public @interface DefaultProperties {
     /**
-     * when true Consul4Spring will compare the existing properties with the ones provided by the application, if they're
-     * not equal then the existing properties will be moved to a backup location in Consul and the properties provided
-     * by the application will be written instead. This is a convenient way to upgrade the "current" configuration
+     * the version property replaces the "overrideExisting". This property is more flexible - it only replaces the
+     * "current" configuration if the versions don't match. If the versions match, then the existing configuration
+     * will not be replaced. This is because otherwise the Consul config is always overridden with the application's
+     * "default" version if anything was changed in Consul, which effectively means that the Consul changes can only be
+     * used if the configuration can change online, and each time the application is restarted the configuration resets
+     * itself back to the default.
      *
-     * @return whether or not to override the default properties that already exist in Consul
+     * The version is stored in Consul under <code>{serviceName}/{serviceId}/config/current-version</code>
+     *
+     * @return the version of the application's configuration
      */
-    boolean overrideExisting() default false;
+    String version();
 }

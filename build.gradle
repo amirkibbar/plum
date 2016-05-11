@@ -30,13 +30,14 @@ dependencies {
     compile "com.orbitz.consul:consul-client:0.9.4"
     compile "dnsjava:dnsjava:2.1.7"
     compile "commons-io:commons-io:2.4"
+    compile "org.projectlombok:lombok:1.16.4"
 
     // the following are required to satisfy the orbitz consul client
     compile "org.apache.cxf:cxf-rt-rs-client:3.0.3"
     compile "org.apache.cxf:cxf-rt-transports-http-hc:3.0.3"
 }
 
-version = "0.1.14"
+version = "0.2.0"
 
 jar {
     baseName = 'plum'
