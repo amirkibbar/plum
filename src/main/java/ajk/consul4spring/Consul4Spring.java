@@ -144,7 +144,7 @@ public class Consul4Spring implements CheckService, DistributedLock, ConsulTempl
         } else {
             log.info("configuration already exists in consul");
             try {
-                if (!currentVersion.isPresent() || !currentValue.get().equals(appConfigVersion)) {
+                if (!currentVersion.isPresent() || !currentVersion.get().equals(appConfigVersion)) {
                     String backupKey = consulProperties.getBaseKey() + "/config/backup-" + ISO_LOCAL_DATE_TIME.format(now());
                     log.info("backing up current config to " + backupKey);
                     kvClient.putValue(backupKey, currentValue.get());
